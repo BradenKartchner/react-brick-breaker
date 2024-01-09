@@ -9,7 +9,6 @@ function Game({ handleScore }) {
     var padding = 1;
     var paddleh = 10;
     var paddlew = 75;
-    var intervalId = 0;
     var brickHeight = 15;
     var ballRadius = 10;
     var brick_colors = [
@@ -25,34 +24,52 @@ function Game({ handleScore }) {
     var y = 150;
     var dx = 1;
     var dy = -3;
+    var score = 0;
+    var paddleX = 0;
+    var canvasMinX, canvasMaxX;
 
     // global vars that DO need state
-    const [paddleX, setPaddleX] = useState(0);
-    const [canvasMinX, setCanvasMinX] = useState(0);
-    const [canvasMaxX, setCanvasMaxX] = useState(0);
     const [paused, setPaused] = useState(false);
+    var intervalIdRef = useRef(null);
 
     // get reference to canvas
     const canvasRef = useRef(null);
+    var myCanvas;
+    const isFirstRender = useRef(true);
 
-    // init(). on loading document, draw the initial canvas
     useEffect(() => {
         // context vars declared here
-        const myCanvas = canvasRef.current;
+        if (isFirstRender.current) {
+            myCanvas = canvasRef.current;
+            init();
+        }
+        isFirstRender.current = false;
+        // for strictMode
+        return () => {
+            isFirstRender.current = true;
+        };
+    }, []);
+
+    // init(). on loading document, draw the initial canvas
+    function init() {
+        // context vars declared here
+        myCanvas = canvasRef.current;
         const ctx = myCanvas.getContext("2d");
         ctx.fillStyle = backcolor;
         width = myCanvas.width;
         height = myCanvas.height;
         ctx.fillRect(0, 0, width, height);
-        setPaddleX(width / ncols - 1);
+        paddleX = width / ncols - 1;
         brickWidth = width / ncols - 1;
-        setCanvasMinX(myCanvas.offsetLeft);
-        setCanvasMaxX(canvasMinX + width);
+        canvasMinX = myCanvas.offsetLeft;
+        canvasMaxX = canvasMinX + width;
+        console.log("ran init");
         // TODO: initialize bricks, draw everything once by calling draw()?
         init_bricks();
         draw();
+        start_animation();
         // TODO: add message to display "click to start"
-    });
+    }
 
     // init_bricks() function
     function init_bricks() {
@@ -69,7 +86,7 @@ function Game({ handleScore }) {
 
     // used to draw the ball
     function circle(x, y, r) {
-        const myCanvas = canvasRef.current;
+        myCanvas = canvasRef.current;
         var ctx = myCanvas.getContext("2d");
         ctx.fillStyle = ballcolor;
         ctx.beginPath();
@@ -80,7 +97,7 @@ function Game({ handleScore }) {
 
     // used to draw each brick & the paddle
     function rect(x, y, w, h, color) {
-        const myCanvas = canvasRef.current;
+        myCanvas = canvasRef.current;
         var ctx = myCanvas.getContext("2d");
         ctx.fillStyle = color;
         ctx.beginPath();
@@ -91,7 +108,7 @@ function Game({ handleScore }) {
 
     // clear everything from the canvas
     function clear() {
-        const myCanvas = canvasRef.current;
+        myCanvas = canvasRef.current;
         var ctx = myCanvas.getContext("2d");
         ctx.clearRect(0, 0, width, height);
         rect(0, 0, width, height, backcolor);
@@ -100,7 +117,7 @@ function Game({ handleScore }) {
     // function to draw the bricks
     // render the bricks
     function draw_bricks() {
-        const myCanvas = canvasRef.current;
+        myCanvas = canvasRef.current;
         var ctx = myCanvas.getContext("2d");
         for (let i = 0; i < nrows; i++) {
             // for each row of bricks
@@ -116,7 +133,8 @@ function Game({ handleScore }) {
                         j * (brickWidth + padding) + padding,
                         i * (brickHeight + padding) + padding,
                         brickWidth,
-                        brickHeight
+                        brickHeight,
+                        brick_colors[(i + j) % brick_colors.length]
                     );
                 } // else if bricks[i][j] is false it's already been hit
             }
@@ -125,8 +143,8 @@ function Game({ handleScore }) {
 
     // main drawing function. call this on an interval to play the game
     function draw() {
-        const myCanvas = canvasRef.current;
-        var ctx = myCanvas.getContext("2d");
+        // const myCanvas = canvasRef.current;
+        // var ctx = myCanvas.getContext("2d");
         // clear everything from Canvas each frame, then redraw
         clear();
         // draw ball
@@ -139,8 +157,55 @@ function Game({ handleScore }) {
         // check if we have hit a brick
         let rowheight = brickHeight + padding;
         let colwidth = brickWidth + padding;
-        row = Math.floor(y / rowheight);
-        col = Math.floor(x / colwidth);
+        let row = Math.floor(y / rowheight);
+        let col = Math.floor(x / colwidth);
+        // if hit brick, reverse ball and mark brick as broken, update score
+        if (y < nrows * rowheight && row >= 0 && col >= 0 && bricks[row][col]) {
+            dy = -dy;
+            bricks[row][col] = false;
+            score += 1;
+            //handleScore(score);
+        }
+
+        // rebound ball off of canvas walls
+        if (x + dx > width || x + dx < 0) {
+            dx = -dx;
+        }
+        if (y + dy < 0) {
+            dy = -dy;
+        } else if (y + dy > height - paddleh) {
+            // check if the ball is hitting the
+            // paddle and if it is rebound it
+            if (x > paddleX && x < paddleX + paddlew) {
+                dy = -dy;
+            }
+        }
+        if (y + dy > height) {
+            //game over, so stop the animation
+            stop_animation();
+        }
+        x += dx;
+        y += dy;
+    }
+
+    // call this to start playing the game
+    function start_animation() {
+        intervalIdRef.current = setInterval(draw, 100);
+        console.log(intervalIdRef.current);
+    }
+
+    // call this to stop the game, aka when the player loses or when paused
+    function stop_animation() {
+        clearInterval(intervalIdRef.current);
+        console.log("game over");
+    }
+
+    // handle mouse moving over the canvas events
+    function handleMouseMove(evt) {
+        if (evt.pageX > canvasMinX && evt.pageX < canvasMaxX) {
+            paddleX = Math.max(evt.pageX - canvasMinX - paddlew / 2, 0);
+            paddleX = Math.min(width - paddlew, paddleX);
+        }
     }
 
     return (
@@ -150,6 +215,7 @@ function Game({ handleScore }) {
                 id="canvas"
                 width="500"
                 height="300"
+                onMouseMove={(event) => handleMouseMove(event)}
             ></canvas>
         </>
     );
