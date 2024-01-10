@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Game from "./components/Game.jsx";
 import "./App.css";
+import BrickGame from "./components/BrickGame.jsx";
 
 function App() {
     const [score, setScore] = useState(0);
@@ -11,7 +12,7 @@ function App() {
 
     return (
         <>
-            <Game handleScore={handleScore} />
+            <BrickGame />
             <p id="instructions">
                 Mouse moves platform &bull; Press any key to pause
             </p>

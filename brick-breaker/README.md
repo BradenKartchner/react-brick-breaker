@@ -19,6 +19,10 @@ Ideas:
 2. how to get the game loop to run on an interval, using `setInterval(func, time)`? what is the goal here? re-render the canvas every `time` seconds? can we call useEffect() every `time` interval?
 3. call `draw()` on an interval from within `useEffect(..., ([var1, var2, ...]))`, so that every time a state variable changes, the draw function is called to re-calculate the state (and other) variables, thus triggering the gameplay loop
 
+# Misc Notes
+
+-   `Game.jsx` was my first attempt at a solution and it failed miserably. I am keeping it for reference, but it should not be called in the finished web app
+
 # React + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.

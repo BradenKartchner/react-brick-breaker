@@ -11,6 +11,20 @@ function BrickGame() {
     // how to initialize nested array state variable?
     const [bricks, setBricks] = useState();
 
+    // get reference to Canvas
+    const canvasRef = useRef(null);
+
+    function draw() {
+        console.log("ran draw function");
+    }
+
+    // main loop: useEffect()
+    useEffect(() => {
+        var myCanvas = canvasRef.current;
+        console.log(myCanvas);
+        draw();
+    }, [canvasRef, x, y, dx, dy]);
+
     return (
         <>
             <canvas
