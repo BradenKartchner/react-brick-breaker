@@ -92,6 +92,7 @@ function BrickGame() {
     //[canvasRef, x, y, dx, dy]
 
     // handle mouse movement on canvas
+    // TODO: does paddleX need to be a State variable?
     function handleMouseMove(event) {
         if (event.pageX > canvasMinX && event.pageX < canvasMaxX) {
             let newValue = Math.max(event.pageX - canvasMinX - paddleW / 2, 0);
